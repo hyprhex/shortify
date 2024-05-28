@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -14,13 +16,30 @@ func home(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Welcome to shortify"))
 }
 
+func linkViews(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Write([]byte("List of links"))
+}
+
 func linkView(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", http.MethodGet)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	w.Write([]byte("view list of links"))
+
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil || id < 1 {
+		http.NotFound(w, r)
+		return
+	}
+
+	fmt.Fprintf(w, "Display a specific snippet with id %d...", id)
 }
 
 func linkCreate(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +55,7 @@ func linkCreate(w http.ResponseWriter, r *http.Request) {
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", home)
+	mux.HandleFunc("/link/views", linkViews)
 	mux.HandleFunc("/link/view", linkView)
 	mux.HandleFunc("/link/create", linkCreate)
 
